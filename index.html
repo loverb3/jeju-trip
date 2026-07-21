@@ -68,12 +68,14 @@ h1 .wave{color:var(--sea)}
 .goog{background:#4285F4}
 .blog{background:#5A9E6F}
 .yt{background:#E14B4B}
+.share{background:#6B7280}
+#shareSite{margin-left:auto;border:1.5px solid var(--line);background:#fff;color:var(--basalt);font-size:12px;font-weight:800;padding:5px 12px;border-radius:999px;cursor:pointer;font-family:inherit}
 footer{font-size:11px;color:var(--stone);text-align:center;padding:8px 12px 16px;background:var(--sand);line-height:1.6}
 </style>
 </head>
 <body>
 <header>
-  <div class="title-row"><h1>제주 여행 지도 <span class="wave">〜</span></h1><span class="dates">2026. 7. 22 – 27 · 두가족 8명</span></div>
+  <div class="title-row"><h1>제주 여행 지도 <span class="wave">〜</span></h1><span class="dates">2026. 7. 22 – 27 · 두가족 8명</span><button id="shareSite">🔗 공유</button></div>
   <div class="searchbar">
     <input id="q" type="search" placeholder="장소 검색 (예: 비자림, 치저스)" autocomplete="off">
     <button class="clear" id="clearBtn">✕</button>
@@ -282,6 +284,9 @@ function tagHtml(p){
   return h;
 }
 
+function kakaoQuery(p){
+  return encodeURIComponent(p.nm.replace(/\s*\(.*?\)\s*/g,' ').trim());
+}
 function popupHtml(p){
   const c = CATS[p.cat];
   const nmClean = p.nm.replace(/\s*\(.*?\)\s*/g,' ').trim();
@@ -293,13 +298,14 @@ function popupHtml(p){
   if(p.fee)   h += `<div class="pp-tip" style="background:#EEF5EC;color:#2F5D3A">💰 ${esc(p.fee)}</div>`;
   h += `<div class="pp-tags">${tagHtml(p)}</div>`;
   h += `<div class="pp-btns">
-      <a class="kakao" target="_blank" href="https://map.kakao.com/link/to/${nmEnc},${p.lat},${p.lng}">카카오맵</a>
+      <a class="kakao" target="_blank" href="https://map.kakao.com/link/search/${kakaoQuery(p)}">카카오맵</a>
       <a class="naver" target="_blank" href="https://map.naver.com/p/search/${nmEnc}">네이버</a>
       <a class="goog" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}">구글</a>
     </div>
     <div class="pp-btns">
-      <a class="blog" target="_blank" href="https://search.naver.com/search.naver?ssc=tab.blog.all&query=${blogQ}">📝 블로그 후기</a>
+      <a class="blog" target="_blank" href="https://search.naver.com/search.naver?ssc=tab.blog.all&query=${blogQ}">📝 블로그</a>
       <a class="yt" target="_blank" href="https://www.youtube.com/results?search_query=${blogQ}">▶ 유튜브</a>
+      <button class="share" onclick="sharePlace('${p.id}')">🔗 공유</button>
     </div>`;
   return h;
 }
@@ -376,6 +382,24 @@ window.addEventListener('scroll',()=>{
   toMapBtn.style.display=(b<70)?'block':'none';
 },{passive:true});
 toMapBtn.addEventListener('click',scrollToMap);
+
+/* 공유 기능 */
+async function doShare(title,text,url){
+  if(navigator.share){
+    try{ await navigator.share({title,text,url}); }catch(e){}
+  }else{
+    try{ await navigator.clipboard.writeText(text+'\n'+url); alert('링크가 복사되었습니다. 붙여넣기로 공유하세요.'); }
+    catch(e){ prompt('아래 내용을 복사해 공유하세요', text+' '+url); }
+  }
+}
+window.sharePlace = function(id){
+  const p = BASE.find(x=>x.id===id); if(!p) return;
+  const kakaoUrl = 'https://map.kakao.com/link/search/'+kakaoQuery(p);
+  doShare(p.nm, '📍 '+p.nm+'\n'+(p.intro||''), kakaoUrl);
+};
+document.getElementById('shareSite').addEventListener('click',()=>{
+  doShare('제주 여행 지도','제주 여행 지도 (7/22~27) — 우리 가족 장소 모음', location.href);
+});
 
 render();
 </script>
